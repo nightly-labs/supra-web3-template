@@ -1,0 +1,21 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit",
+    "source.fixAll.eslint": "explicit",
+    "editor.formatOnSave": "explicit"
+  },
+  "eslint.enable": true,
+  "eslint.options": {
+    "overrideConfigFile": "./eslint.config.mjs",
+    "cache": true,
+    "cacheLocation": ".eslintcache"
+  },
+  "eslint.useFlatConfig": true,
+  "eslint.lintTask.enable": false,
+  "eslint.onIgnoredFiles": "off",
+  "eslint.workingDirectories": ["${workspaceFolder}/eslint.config.mjs"],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "eslint.nodeEnv": "NODE_OPTIONS=--max-old-space-size=8192",
+  "eslint.run": "onType",
+  "eslint.format.enable": true
+}
