@@ -1,5 +1,5 @@
 import { type TxnBuilderTypes } from 'supra-l1-sdk'
-import { IRawTxObject, NetworkInfo } from './type'
+import { IRawTxObject } from './type'
 
 export interface SupraAdatper {
   accounts: string[]
@@ -10,9 +10,10 @@ export interface SupraAdatper {
     input: IRawTxObject | TxnBuilderTypes.RawTransaction
   ) => Promise<string>
   signMessage: (input: { message: string }) => Promise<{ publicKey: string; signature: string }>
-  onAccountChange: (input: (newAccount: string) => void) => Promise<void>
-  onNetworkChange: (input: (newNetwork: NetworkInfo) => void) => Promise<void>
   getChainId: () => { chainId: number }
+  changeNetwork: (input: { chainId: number }) => Promise<boolean>
+  onAccountChange: (input: (newAccount: string) => void) => Promise<void>
+  onNetworkChange: (input: (newNetwork: { chainId: number }) => void) => Promise<void>
 }
 
 let _adapter: SupraAdatper
@@ -22,10 +23,7 @@ export const getAdapter = async (persisted = true) => {
   const windowNightly = window?.nightly?.supra
   if (!windowNightly) {
     alert('Supra adapter not found, Install Nightly wallet')
-    window.open(
-      'https://chromewebstore.google.com/detail/nightly/fiikommddbeccaoicoejoniammnalkfa',
-      '_blank'
-    )
+    window.open('https://nightly.app/download', '_blank')
     throw new Error('Supra adapter not found')
   }
   _adapter = windowNightly

@@ -6,6 +6,7 @@ import nacl from 'tweetnacl'
 import { getAdapter } from '../misc/adapter'
 import { IRawTxObject } from '../misc/type'
 import ActionStarryButton from './ActionStarryButton'
+import ChangeNetworkButton from './ChangeNetworkButton'
 import StarryButton from './StarryButton'
 
 const remove0xPrefix = (hexString: string) => {
@@ -25,46 +26,32 @@ const HARDCODED_EXPLORER_BY_CHAIN_ID: Record<number, string> = {
   6: 'https://testnet.suprascan.io/tx/',
   8: 'https://suprascan.io/tx/'
 }
+
+const HARDCODED_CHAIN_NEME_BY_CHAIN_ID: Record<number, string> = {
+  6: 'Supra Testnet',
+  8: 'Supra Mainnet'
+}
 const StickyHeader: React.FC = () => {
   const [userAccount, setUserAccount] = React.useState<string | undefined>()
-  // useEffect(() => {
-  //   const init = async () => {
-  //     const adapter = await getAdapter();
-  //     // Events
-  //     adapter.on("connect", (accInfo) => {
-  //       if (accInfo && "address" in accInfo) {
-  //         setUserAccount(accInfo);
-  //       }
-  //     });
+  const [chainId, setChainId] = React.useState<number | undefined>()
 
-  //     adapter.on("disconnect", () => {
-  //       setUserAccount(undefined);
-  //       console.log("adapter disconnected");
-  //     });
+  const handleSubsribeChangeNetwork = (input: { chainId: number }) => {
+    setChainId(input.chainId)
+  }
+  const handleSubsribeChangeUserAddress = (newAccount: string) => {
+    setUserAccount(newAccount)
+  }
 
-  //     adapter.on("accountChange", (accInfo) => {
-  //       if (accInfo && "address" in accInfo) {
-  //         setUserAccount(accInfo);
-  //       }
-  //     });
-  //   };
-  //   init();
-  //   // Try eagerly connect
-  // }, []);
+  const supraChainName = React.useMemo(() => {
+    if (chainId !== undefined) {
+      return HARDCODED_CHAIN_NEME_BY_CHAIN_ID[chainId]
+    }
+    return undefined
+  }, [chainId])
+
   return (
     <header className='fixed top-0 left-0 w-full bg-opacity-50  p-6 z-10'>
       <div className='flex items-center justify-between'>
-        <div>
-          {/* <Image
-            style={{ width: '200px', cursor: 'pointer' }}
-            src={NightlyLogo}
-            alt='logo'
-            onClick={() => {
-              // redirect to nightly.app
-              window.location.href = 'https://nightly.app'
-            }}
-          /> */}
-        </div>
         <div className='flex flex-col space-y-4'>
           <StarryButton
             connected={userAccount !== undefined}
@@ -72,8 +59,13 @@ const StickyHeader: React.FC = () => {
               const adapter = await getAdapter()
               try {
                 const response = await adapter.connect()
+                // Subscribe to events
+                adapter.onAccountChange(handleSubsribeChangeUserAddress)
+                adapter.onNetworkChange(handleSubsribeChangeNetwork)
 
                 setUserAccount(response[0])
+                const { chainId } = adapter.getChainId()
+                setChainId(chainId)
                 toast.success('Wallet connected!')
               } catch (error) {
                 toast.error('Wallet connection failed!')
@@ -118,6 +110,19 @@ const StickyHeader: React.FC = () => {
                       // optionalTransactionPayloadArgs:{} // optional
                     }
 
+                    // Second way to sign transaction
+                    // const txRaw = await supra.createRawTxObject(
+                    //   rawTx.senderAddr,
+                    //   rawTx.senderSequenceNumber,
+                    //   rawTx.moduleAddr,
+                    //   rawTx.moduleName,
+                    //   rawTx.functionName,
+                    //   rawTx.functionTypeArgs,
+                    //   rawTx.functionArgs,
+                    //   rawTx.optionalTransactionPayloadArgs
+                    // )
+                    // const txHash = await adapter.signAndSubmitTransaction(rawTx)
+
                     const txHash = await adapter.signAndSubmitTransaction(rawTx)
                     console.log('txHash', txHash)
                     alert(
@@ -156,6 +161,20 @@ const StickyHeader: React.FC = () => {
                       ]
                       // optionalTransactionPayloadArgs:{} // optional
                     }
+
+                    // Second way to sign transaction
+                    // const txRaw = await supra.createRawTxObject(
+                    //   rawTx.senderAddr,
+                    //   rawTx.senderSequenceNumber,
+                    //   rawTx.moduleAddr,
+                    //   rawTx.moduleName,
+                    //   rawTx.functionName,
+                    //   rawTx.functionTypeArgs,
+                    //   rawTx.functionArgs,
+                    //   rawTx.optionalTransactionPayloadArgs
+                    // )
+                    // const txHash = await adapter.signAndSubmitTransaction(rawTx)
+
                     const signedTx = await adapter.signTransaction(rawTx)
                     console.log('signedTx', signedTx)
                   }
@@ -211,6 +230,36 @@ const StickyHeader: React.FC = () => {
                   })
                 }}
                 name='Sign Message'></ActionStarryButton>
+
+              <ChangeNetworkButton
+                onClick={async (chainId: number) => {
+                  try {
+                    const adapter = await getAdapter()
+                    const walletChainId = adapter.getChainId()
+
+                    if (walletChainId.chainId === chainId) {
+                      return
+                    }
+                    const changeNetworkResponse = await adapter.changeNetwork({
+                      chainId
+                    })
+
+                    if (changeNetworkResponse) {
+                      const changedChainId = adapter.getChainId()
+                      toast.success(`Changed chainId to ${changedChainId}!`)
+                    }
+                  } catch (error) {
+                    toast.error("Couldn't change chainId")
+                    console.log(error)
+                  }
+                }}
+              />
+
+              <div>
+                <span className='text-white' style={{ width: '150px' }}>
+                  {supraChainName && `Connected to ${supraChainName}`}{' '}
+                </span>
+              </div>
             </>
           )}
         </div>
